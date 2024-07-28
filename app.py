@@ -21,7 +21,9 @@ def load_model_and_encoders():
 def predict_churn(data, model, label_encoders):
     for column in label_encoders:
         if column in data.columns:
-            data[column] = label_encoders[column].transform(data[column])
+            le = label_encoders[column]
+            # Ajuster les nouvelles catégories qui n'étaient pas vues lors de l'entraînement
+            data[column] = data[column].apply(lambda x: le.transform([x])[0] if x in le.classes_ else -1)
     prediction = model.predict(data)
     return prediction
 
@@ -92,3 +94,4 @@ else:
             prediction = predict_churn(data, model, label_encoders)
             st.write("Prédictions de désabonnement (0 = Non, 1 = Oui):")
             st.write(prediction)
+
