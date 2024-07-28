@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 import pickle
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 
 # Charger le modèle et les label encoders
@@ -24,6 +22,18 @@ def predict_churn(data, model, label_encoders):
             le = label_encoders[column]
             # Ajuster les nouvelles catégories qui n'étaient pas vues lors de l'entraînement
             data[column] = data[column].apply(lambda x: le.transform([x])[0] if x in le.classes_ else -1)
+    
+    # Ajout d'une colonne fictive 'user_id' si elle manque
+    if 'user_id' not in data.columns:
+        data['user_id'] = np.nan
+
+    # Ordonner les colonnes comme attendu par le modèle
+    ordered_columns = ['user_id', 'REGION', 'TENURE', 'MONTANT', 'FREQUENCE_RECH', 'REVENUE', 'ARPU_SEGMENT', 
+                       'FREQUENCE', 'DATA_VOLUME', 'ON_NET', 'ORANGE', 'TIGO', 'ZONE1', 'ZONE2', 
+                       'MRG', 'REGULARITY', 'TOP_PACK', 'FREQ_TOP_PACK']
+    
+    data = data[ordered_columns]
+    
     prediction = model.predict(data)
     return prediction
 
@@ -49,6 +59,21 @@ if uploaded_file:
     # Charger le modèle et les label encoders
     model, label_encoders = load_model_and_encoders()
 
+    # Vérifier et filtrer les colonnes nécessaires
+    required_columns = ['REGION', 'TENURE', 'MONTANT', 'FREQUENCE_RECH', 'REVENUE', 'ARPU_SEGMENT', 
+                        'FREQUENCE', 'DATA_VOLUME', 'ON_NET', 'ORANGE', 'TIGO', 'ZONE1', 'ZONE2', 
+                        'MRG', 'REGULARITY', 'TOP_PACK', 'FREQ_TOP_PACK']
+
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        st.error(f"Les colonnes suivantes sont manquantes dans le fichier téléchargé : {missing_columns}")
+        st.stop()
+
+    # Ajouter des colonnes manquantes avec des valeurs par défaut
+    for col in required_columns:
+        if col not in data.columns:
+            data[col] = np.nan
+
     # Faire les prédictions
     if st.button("Prédire"):
         with st.spinner("Prédiction en cours..."):
@@ -56,7 +81,6 @@ if uploaded_file:
             st.write("Prédictions de désabonnement (0 = Non, 1 = Oui):")
             st.write(prediction)
 else:
-    # Exemple de données intégrées si aucun fichier n'est téléchargé
     st.write("Aucun fichier téléchargé. Utilisation d'un exemple de jeu de données intégré.")
     data = pd.DataFrame({
         'REGION': ['Dakar', 'Dakar', 'Thies'],
@@ -81,7 +105,6 @@ else:
     st.write("Aperçu des données intégrées :")
     st.write(data.head())
 
-    # Afficher les colonnes de l'ensemble de données intégré
     st.write("Colonnes de l'ensemble de données intégré :")
     st.write(data.columns)
 
@@ -94,4 +117,5 @@ else:
             prediction = predict_churn(data, model, label_encoders)
             st.write("Prédictions de désabonnement (0 = Non, 1 = Oui):")
             st.write(prediction)
+
 
