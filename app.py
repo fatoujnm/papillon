@@ -132,3 +132,4 @@ else:
 
     with open('label_encoders.pkl', 'wb') as file:
         pickle.dump(label_encoders, file)
+
