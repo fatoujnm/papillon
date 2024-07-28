@@ -54,82 +54,41 @@ if uploaded_file:
             st.write("Prédictions de désabonnement (0 = Non, 1 = Oui):")
             st.write(prediction)
 else:
-    # Code pour le prétraitement et la formation du modèle si le fichier n'est pas téléchargé
-    st.write("En attente du téléchargement du fichier CSV...")
-    # Charger les données
-    data_path = "C:\\Users\\dell\\Downloads\\Expresso_churn_dataset.csv"
-    data = pd.read_csv(data_path)
+    # Exemple de données intégrées si aucun fichier n'est téléchargé
+    st.write("Aucun fichier téléchargé. Utilisation d'un exemple de jeu de données intégré.")
+    data = pd.DataFrame({
+        'REGION': ['Dakar', 'Dakar', 'Thies'],
+        'TENURE': [12, 24, 36],
+        'MONTANT': [1000, 1500, 2000],
+        'FREQUENCE_RECH': [10, 15, 20],
+        'REVENUE': [5000, 6000, 7000],
+        'ARPU_SEGMENT': [50, 60, 70],
+        'FREQUENCE': [5, 10, 15],
+        'DATA_VOLUME': [1, 2, 3],
+        'ON_NET': [100, 150, 200],
+        'ORANGE': [50, 60, 70],
+        'TIGO': [20, 30, 40],
+        'ZONE1': [1, 0, 1],
+        'ZONE2': [0, 1, 0],
+        'MRG': [10, 20, 30],
+        'REGULARITY': [1, 1, 1],
+        'TOP_PACK': ['A', 'B', 'A'],
+        'FREQ_TOP_PACK': [3, 4, 5],
+    })
 
-    # Afficher des informations générales sur l'ensemble de données
-    st.write("Aperçu des données :")
+    st.write("Aperçu des données intégrées :")
     st.write(data.head())
-    st.write("Statistiques descriptives :")
-    st.write(data.describe())
-    st.write("Informations sur les données :")
-    st.write(data.info())
 
-    # Gérer les valeurs manquantes
-    data = data.dropna()
-    st.write("Données après suppression des valeurs manquantes :")
-    st.write(data.info())
-
-    # Supprimer les doublons
-    data = data.drop_duplicates()
-    st.write("Données après suppression des doublons :")
-    st.write(data.info())
-
-    # Gérer les valeurs aberrantes (exemple simple)
-    for column in data.select_dtypes(include=['int64', 'float64']).columns:
-        q1 = data[column].quantile(0.25)
-        q3 = data[column].quantile(0.75)
-        iqr = q3 - q1
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
-        data = data[(data[column] >= lower_bound) & (data[column] <= upper_bound)]
-
-    st.write("Données après gestion des valeurs aberrantes :")
-    st.write(data.info())
-
-    # Encoder les caractéristiques catégorielles
-    label_encoders = {}
-    for column in data.select_dtypes(include=['object']).columns:
-        le = LabelEncoder()
-        data[column] = le.fit_transform(data[column])
-        label_encoders[column] = le
-
-    st.write("Données après encodage des caractéristiques catégorielles :")
-    st.write(data.info())
-
-    # Afficher les colonnes de l'ensemble de données
-    st.write("Colonnes de l'ensemble de données :")
+    # Afficher les colonnes de l'ensemble de données intégré
+    st.write("Colonnes de l'ensemble de données intégré :")
     st.write(data.columns)
 
-    # Séparer les caractéristiques et la cible
-    if 'CHURN' in data.columns:  # Correction ici, 'CHURN' au lieu de 'churn'
-        X = data.drop('CHURN', axis=1)  # Utilisez la colonne 'CHURN' comme cible
-        y = data['CHURN']
-    else:
-        st.error("La colonne 'CHURN' n'est pas présente dans l'ensemble de données.")
-        st.stop()
+    # Charger le modèle et les label encoders
+    model, label_encoders = load_model_and_encoders()
 
-    # Diviser les données en ensembles d'entraînement et de test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Former le modèle
-    model = RandomForestClassifier()
-    model.fit(X_train, y_train)
-
-    # Faire des prédictions
-    y_pred = model.predict(X_test)
-
-    # Évaluer le modèle
-    accuracy = accuracy_score(y_test, y_pred)
-    st.write(f"Précision du modèle : {accuracy * 100:.2f}%")
-
-    # Sauvegarder le modèle et les label encoders
-    with open('random_forest_model.pkl', 'wb') as file:
-        pickle.dump(model, file)
-
-    with open('label_encoders.pkl', 'wb') as file:
-        pickle.dump(label_encoders, file)
-
+    # Faire les prédictions sur les données intégrées
+    if st.button("Prédire sur les données intégrées"):
+        with st.spinner("Prédiction en cours..."):
+            prediction = predict_churn(data, model, label_encoders)
+            st.write("Prédictions de désabonnement (0 = Non, 1 = Oui):")
+            st.write(prediction)
